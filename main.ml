@@ -130,9 +130,9 @@ let flatten_tailrec nodelist =
   aux [] nodelist;;
 
 flatten_tailrec [One "a"; Many [One "b"; Many [One "c" ;One "d"]; One "e"]];;
+(*********************************************)
 
 (*** 8. Eliminate (consecutive) duplicates ***)
-
 let rec compress iList = 
   match iList with
     | [] -> []
@@ -154,4 +154,106 @@ let compress_tailrec iList =
 
 compress_tailrec ["a"; "a"; "a"; "a"; "b"; "c"; "c"; "a"; "a"; "d"; "e"; "e"; "e"; "e"];;
 (* - : string list = ["a"; "b"; "c"; "a"; "d"; "e"] *)
+(*********************************************)
 
+(*** 9. Pack consecutive duplicates ***)
+(* this time I try to write directly a tail-recursive function *)
+
+let pack iList = 
+  let rec aux acc list = 
+    match list with
+      |[] -> List.rev acc
+      |head::rest -> (* it depends on what's in the accumulator *)
+        match acc with
+          | [] -> aux [[head]] rest
+          | headacc(*headache!*)::restacc -> if List.hd headacc = head then  (* the sublists aren't empty by construction *)
+                                                aux ((head::headacc) :: restacc) rest
+                                             else 
+                                                aux ([head] :: acc) rest
+  in 
+  aux [] iList
+;;
+
+(* checking the head of the accumulator (=already packed items) is not necessary and I could use 
+ * a pattern similar to problem 8. cf the solution given on ocaml.org *)
+
+pack ["a"; "a"; "a"; "a"; "b"; "c"; "c"; "a"; "a"; "d"; "d"; "e"; "e"; "e"; "e"];;
+(* 
+- : string list list =
+[["a"; "a"; "a"; "a"]; ["b"]; ["c"; "c"]; ["a"; "a"]; ["d"; "d"];
+ ["e"; "e"; "e"; "e"]] 
+*)
+
+(***************************)
+(* 10. Run-Length Encoding *)
+
+let encode iList = 
+  let rec aux acc list = 
+    match list with
+      | [] -> List.rev acc
+      | head::rest -> match acc with
+        | [] -> aux [(1, head)] rest
+        | (num, str)::restacc -> if str = head then
+                                   aux ((num+1, str)::restacc) rest
+                                 else
+                                   aux ((1, head)::acc) rest
+  in
+  aux [] iList
+;;
+
+encode ["a"; "a"; "a"; "a"; "b"; "c"; "c"; "a"; "a"; "d"; "e"; "e"; "e"; "e"];;
+(* - : (int * string) list =
+[(4, "a"); (1, "b"); (2, "c"); (2, "a"); (1, "d"); (4, "e")] *)
+
+
+(************************************)
+(* 11. Modified Run-Length Encoding *)
+
+type 'a rle =
+  | One of 'a
+  | Many of int * 'a;;
+
+(* I could adapt the previous solution easily but this time I pass the current count in the accumulator *)
+
+let modified_encode iList = 
+  let rec aux acc count list = 
+    match list with
+      | [] -> [] (* can't enter here unless iList is empty *)
+      | [a] -> if count = 0 then One(a)::acc else Many(count+1, a)::acc
+      (* I don't process h2 here, the goal is only to compare it to h1 *)
+      | h1::h2::rest -> 
+        if h1 = h2 then 
+          aux acc (count+1) (h2::rest) 
+        else if count = 0 then (* the element is unique so I push a "One" *)
+          aux (One(h1)::acc) 0 (h2::rest)          
+        else 
+          aux (Many(count+1, h1)::acc) 0 (h2::rest)
+  in 
+  List.rev (aux [] 0 iList)
+;;
+
+modified_encode ["a"; "a"; "a"; "a"; "b"; "c"; "c"; "a"; "a"; "d"; "e"; "e"; "e"; "e"];;
+(* - : string rle list =
+[Many (4, "a"); One "b"; Many (2, "c"); Many (2, "a"); One "d";
+ Many (4, "e")] *)
+
+(****************************************)
+(* 12. Decode a Run-Length Encoded list *)
+
+let decode iList =
+  let rec aux acc cnt list =
+    match list with
+      | [] -> acc
+      | One(a)::rest -> aux (a::acc) 0 rest
+      | Many(num, e)::rest -> 
+        if cnt+1 = num then
+          aux (e::acc) 0 rest
+        else
+          aux (e::acc) (cnt+1) list (* I'm not done with e yet *)
+  in
+  List.rev (aux [] 0 iList)
+;;
+
+decode [Many (4, "a"); One "b"; Many (2, "c"); Many (2, "a"); One "d"; Many (4, "e")];;
+(* - : string list =
+["a"; "a"; "a"; "a"; "b"; "c"; "c"; "a"; "a"; "d"; "e"; "e"; "e"; "e"] *)
