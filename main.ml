@@ -257,3 +257,153 @@ let decode iList =
 decode [Many (4, "a"); One "b"; Many (2, "c"); Many (2, "a"); One "d"; Many (4, "e")];;
 (* - : string list =
 ["a"; "a"; "a"; "a"; "b"; "c"; "c"; "a"; "a"; "d"; "e"; "e"; "e"; "e"] *)
+
+(***********************************************************)
+(*** 13. Run-Length Encoding of a List (Direct Solution) ***)
+(** I don't see any difference with problem 11. **)
+
+(********************************************)
+(*** 14. Duplicate the Elements of a List ***)
+
+let duplicate iList =
+  let rec aux acc list =
+    match list with
+      | [] -> acc
+      | head::rest -> aux (head::head::acc) rest
+  in
+  List.rev (aux [] iList)
+;;
+
+duplicate ["a"; "b"; "c"; "c"; "d"];;
+(* - : string list = ["a"; "a"; "b"; "b"; "c"; "c"; "c"; "c"; "d"; "d"] *)
+
+(********************************************************************)
+(*** 15. Replicate the Elements of a List a Given Number of Times ***)
+
+let replicate iList n =
+  let rec aux acc cnt list =
+    match list with
+      | [] -> acc
+      | head::rest -> if (cnt+1) = n then aux (head::acc) 0 rest else aux (head::acc) (cnt+1) list
+  in
+  List.rev (aux [] 0 iList)
+;;
+replicate ["a"; "b"; "c"] 3;;
+(* - : string list = ["a"; "a"; "a"; "b"; "b"; "b"; "c"; "c"; "c"] *)
+
+(***********************************************)
+(*** 16. Drop Every N'th Element From a List ***)
+
+let drop iList n =
+  let rec aux acc cnt list =
+    match list with
+      | [] -> acc
+      | h::r -> if (cnt+1) = n then aux acc 0 r else aux (h::acc) (cnt+1) r
+  in
+  List.rev (aux [] 0 iList)
+;;
+
+drop ["a"; "b"; "c"; "d"; "e"; "f"; "g"; "h"; "i"; "j"] 3;;
+(* - : string list = ["a"; "b"; "d"; "e"; "g"; "h"; "j"] *)
+
+
+(******************************************************************************)
+(*** 17. Split a List Into Two Parts; The Length of the First Part Is Given ***)
+
+let split iList n =
+  let rec aux acc cnt list =
+    match list with
+      | [] -> (List.rev acc, [])
+      | h::r -> if cnt = n then (* done! *)
+                  (List.rev acc, r)
+                else aux (h::acc) (cnt+1) r
+  in
+  aux [] 0 iList
+;;
+
+split ["a"; "b"; "c"; "d"; "e"; "f"; "g"; "h"; "i"; "j"] 3;;
+(* - : string list * string list = 
+(["a"; "b"; "c"], ["d"; "e"; "f"; "g"; "h"; "i"; "j"]) *)
+split ["a"; "b"; "c"; "d"] 5;;
+(* - : string list * string list = (["a"; "b"; "c"; "d"], []) *)
+
+(***************************************)
+(*** 18. Extract a Slice From a List ***)
+
+let slice iList i k = (* both limits included *)
+  let rec aux acc cnt list =
+    match list with
+      | [] -> acc
+      | head::rest -> if cnt < i then (* not there yet *)
+                        aux acc (cnt+1) rest
+                      else if (cnt <= k) then (* add to the slice *)
+                        aux (head::acc) (cnt+1) rest
+                      else acc (* no need to continue *)
+  in
+  List.rev (aux [] 0 iList);;
+
+slice ["a"; "b"; "c"; "d"; "e"; "f"; "g"; "h"; "i"; "j"] 2 6;;
+(* - : string list = ["c"; "d"; "e"; "f"; "g"] *)
+
+(******************************************)
+(*** 19. Rotate a List N Places to the Left ***)
+
+let rotate iList n =
+  let (l_1, l_2) = split iList n in l_2 @ l_1;;
+
+rotate ["a"; "b"; "c"; "d"; "e"; "f"; "g"; "h"] 3;;
+(* - : string list = ["d"; "e"; "f"; "g"; "h"; "a"; "b"; "c"] *)
+
+(***********************************************)
+(*** 20. Remove the K'th Element From a List ***)
+
+let remove_at n iList =
+  let rec aux acc cnt list = 
+    match list with
+      | [] -> []
+      | head::rest -> if cnt = n then (List.rev acc) @ rest else aux (head::acc) (cnt+1) rest
+  in
+  aux [] 0 iList
+;;
+
+remove_at 1 ["a"; "b"; "c"; "d"];;
+(* - : string list = ["a"; "c"; "d"] *)
+
+(*************************************************************)
+(*** 21. Insert an Element at a Given Position Into a List ***)
+
+let insert_at iElt n iList =
+  if n = 0 then iElt::iList 
+  else
+    let rec aux acc cnt list =
+      match list with
+        | [] -> if cnt = n then List.rev_append acc [iElt] else raise (Failure "out of bounds")
+        | head::rest -> if cnt = n then List.rev_append acc (iElt::head::rest)
+                        else aux (head::acc) (cnt+1) rest
+    in
+    aux [] 0 iList
+  ;;
+insert_at "alfa" 1 ["a"; "b"; "c"; "d"];;
+(* - : string list = ["a"; "alfa"; "b"; "c"; "d"] *)
+insert_at "Babar" 0 ["a"; "b"; "c"; "d"];;
+insert_at "Babar" 4 ["a"; "b"; "c"; "d"];;
+insert_at "Babar" 9 ["a"; "b"; "c"; "d"];; (* raises *)
+insert_at "Babar" 0 [];;
+
+(**********************************************************************)
+(*** 22. Create a List Containing All Integers Within a Given Range ***)
+
+let range i k =
+  let rec aux acc cnt lowest =
+    if cnt >= lowest then aux (cnt::acc) (cnt-1) lowest else acc
+  in
+  if i <= k then aux [] k i else List.rev (aux [] i k)
+;;
+
+range 4 9;;
+range 9 4;;
+(* - : int list = [4; 5; 6; 7; 8; 9] *)
+
+(************************************************************************)
+(*** 23. Extract a Given Number of Randomly Selected Elements From a List ***)
+
