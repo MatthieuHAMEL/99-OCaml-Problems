@@ -393,7 +393,7 @@ insert_at "Babar" 0 [];;
 (**********************************************************************)
 (*** 22. Create a List Containing All Integers Within a Given Range ***)
 
-let range i k =
+let range i k = (* k included *)
   let rec aux acc cnt lowest =
     if cnt >= lowest then aux (cnt::acc) (cnt-1) lowest else acc
   in
@@ -404,6 +404,113 @@ range 4 9;;
 range 9 4;;
 (* - : int list = [4; 5; 6; 7; 8; 9] *)
 
-(************************************************************************)
+(****************************************************************************)
 (*** 23. Extract a Given Number of Randomly Selected Elements From a List ***)
 
+let rand_select iList n =
+  let _ = Random.init 0 in
+  let rec aux_kth acc cnt_to_k k list cnt_to_n =
+    match list with
+      | [] -> raise (Failure "out of bounds")
+      | head::rest -> if cnt_to_k = k then (* done! *)
+                        aux_get_random_idx (head::acc) iList (cnt_to_n+1)
+                      else
+                        aux_kth acc (cnt_to_k+1) k rest cnt_to_n
+   (* nb: mutual recursion not needed if I define kth (non recursive) calling aux_kth 
+      and get_random_idx calling aux_get_random_idx.*)
+  and aux_get_random_idx acc list cnt_to_n =
+    if cnt_to_n < n then
+      let k = Random.int (List.length list) in
+        (aux_kth acc 0 k list cnt_to_n)
+    else acc
+  in
+  aux_get_random_idx [] iList 0
+  ;;
+rand_select ["a"; "b"; "c"; "d"; "e"; "f"; "g"; "h"] 3;;
+(* - : string list = ["e"; "c"; "g"] *)
+
+(************************************************************************)
+(*** 24. Lotto: Draw N Different Random Numbers From the Set 1..M ***)
+
+let lotto_select n max =
+  rand_select (range 1 max) n;;
+
+lotto_select 6 49;;
+(* - : int list = [20; 28; 45; 16; 24; 38] *)
+
+(*******************************************************************)
+(*** 25. Generate a Random Permutation of the Elements of a List ***)
+
+let permutation list =
+  let rec aux_pick_i acc cnt_to_i i list =
+    match list with
+      | [] -> raise (Failure "out of bounds")
+      | head::rest -> if cnt_to_i = i then
+                        (head, acc @ rest)
+                      else 
+                        aux_pick_i (head::acc) (cnt_to_i+1) i rest
+
+  in
+  let rec aux_permutation acc list =
+    match list with
+      | [] -> acc (* done! *)
+      | [a] -> a::acc (* no need to pick a random number between 0 and 0 *)
+      | _::_ ->
+    let random_index = (Random.int (List.length list)) in
+    let (random_elt, rest) = aux_pick_i [] 0 random_index list in 
+    aux_permutation (random_elt::acc) rest
+  in
+  aux_permutation [] list
+;;
+
+permutation ["a"; "b"; "c"; "d"; "e"; "f"];;
+(* - : string list = ["c"; "d"; "f"; "e"; "b"; "a"] *)
+
+(************************************************************************************************)
+(*** 26. Generate the Combinations of K Distinct Objects Chosen From the N Elements of a List ***)
+
+(*[ 3 1 0 ] -> aux_incr [ 1 0 ] 1 -> prefix is [3] , h+2 is 3, not goe len, so [3 2 0] (a c d)
+
+[3 2 0] -> aux_incr [2 0] -> prefix is [3], h+2 is 4, which is goe len, 
+  -> aux_incr 0 ->  *)
+
+open Printf;;
+
+let extract n list =
+  let len = List.length list in
+  let rec aux_incr indexes cnt = (* try to increment the head, if it's at its max, increment the 2nd elt, etc *)
+    match indexes with
+      | [] -> None (* can't increment more *)
+      | h::r ->
+        if h = (len-1) then aux_incr r (cnt+1)
+        else (* return the result *)
+          let prefix = if cnt = 0 then [] else range (h+2+cnt-1) (h+2) in
+          if cnt >= 1 && (List.hd prefix) >= len then aux_incr r (cnt+1) else Some(prefix @  ((h+1)::r))
+  in
+  let incr_indexes indexes = aux_incr indexes 0 
+  in
+  let rec aux_extract_indexes acc indexes list = 
+    match indexes with
+      | [] -> acc (* done! *)
+      | h::r -> aux_extract_indexes ((List.nth list h)::acc) r list
+  in
+  let extract_indexes indexes list = aux_extract_indexes [] indexes list
+  in
+  let rec aux acc_res indexes =
+    let combi = extract_indexes indexes list in
+    let opt_new_index = incr_indexes indexes in
+      match opt_new_index with 
+        | None -> List.rev (combi::acc_res)
+        | Some(new_index) -> aux (combi::acc_res) new_index
+  in
+  aux [] (range (n-1) 0)
+;;
+    
+extract 2 ["a"; "b"; "c"; "d"];;
+extract 3 ["a"; "b"; "c"; "d"];;
+extract 4 ["a"; "b"; "c"; "d"];;
+(* - : string list list =
+[["a"; "b"]; ["a"; "c"]; ["a"; "d"]; ["b"; "c"]; ["b"; "d"]; ["c"; "d"]] *)
+
+(* playing with a triangular list of indexes was not a good idea. the solution 
+   from ocaml.org is really better! *)
