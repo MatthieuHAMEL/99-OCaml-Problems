@@ -514,3 +514,117 @@ extract 4 ["a"; "b"; "c"; "d"];;
 
 (* playing with a triangular list of indexes was not a good idea. the solution 
    from ocaml.org is really better! *)
+
+(* 27. Group the Elements of a Set Into Disjoint Subsets *)
+
+(* The following functions are very interesting but they don't solve the problem at all *)
+let combine list1 list2 =
+  let rec aux acc l1 l2 =
+    match l1 with
+      | [] -> acc
+      | h1::r1 -> 
+        match l2 with
+          | [] -> aux acc r1 list2
+          | h2::r2 -> aux ([h1;h2]::acc) l1 r2
+  in
+  List.rev (aux [] list1 list2)
+;;
+
+combine ["a";"b"] ["c";"d";"e"];;
+
+let reverse_sublists listoflists =
+  let rec aux acc listoflists =
+    match listoflists with
+      | [] -> acc
+      | headlist::restlists -> aux ((List.rev headlist)::acc) restlists
+  in
+  List.rev (aux [] listoflists);;
+
+let combine_n listoflists =
+  let rec aux seed acc listoflists =
+    match listoflists with
+      | [] -> seed (* done- the seed is the last accumulator *)
+      | headlist::restlists -> 
+        match headlist with
+          | [] -> aux acc [] restlists (* done with the seed, move to the next list with acc as the new seed. *)
+          | headelt::restelts -> (* add headelt to every element of the seed *)
+            aux seed ((List.map (fun x -> headelt::x) seed)@acc) ([restelts] @ restlists)
+  in
+  match listoflists with [] -> raise (Failure "out of bounds")
+    | head::rest -> reverse_sublists (aux (List.map (fun x -> [x]) head) [] rest)
+;;  
+combine_n [["a";"b";"c"]; ["d";"e";"f"]; ["i"; "j"; "k"]];;
+
+let group_failed list sizes =
+  let rec aux_extract_all acc sizes =
+    match sizes with
+      | [] -> acc
+      | head::rest -> aux_extract_all ((extract head list)::acc) rest
+  in
+  let extract_all = aux_extract_all [] sizes
+  in combine_n extract_all
+;;
+(*******end of the failed part *****)
+
+let rec rep_with_elt elt list prefix =
+  match list with
+    | [] -> [prefix@[elt]]
+    | head::rest -> (prefix @ (elt::head::rest)) :: (rep_with_elt elt rest (prefix @ [head]))
+;;
+
+rep_with_elt 5 [2;3] [];;
+
+let rec all_permutations list =
+  match list with
+    | [] -> [[]]
+    | head::rest -> List.concat (List.map (fun x -> (rep_with_elt head x [])) (all_permutations rest))
+;;
+
+
+let group list sizes =
+  let sum_sizes = List.fold_left (+) 0 sizes in
+  let all_permuts = extract sum_sizes list in
+    all_permuts
+  ;;
+
+
+group ["a"; "b"; "c"; "d"] [2; 1];; (* get  all permutations of size 2+1 and put them in [., .], [.]
+(* - : string list list list = (* my order is not the same *)
+[[["a"; "b"]; ["c"]]; [["a"; "c"]; ["b"]]; [["b"; "c"]; ["a"]];
+ [["a"; "b"]; ["d"]]; [["a"; "c"]; ["d"]]; [["b"; "c"]; ["d"]];
+ [["a"; "d"]; ["b"]]; [["b"; "d"]; ["a"]]; [["a"; "d"]; ["c"]];
+ [["b"; "d"]; ["c"]]; [["c"; "d"]; ["a"]]; [["c"; "d"]; ["b"]]] *)
+
+
+
+abc
+012
+
+
+acb
+021
+
+
+bac
+213
+
+bca
+cab
+cba
+
+
+[a] [b] [c] 
+
+[a]b
+
+[a]c
+
+[b]a
+
+[b]c
+
+[c]a
+
+[c]b
+
+
