@@ -582,9 +582,7 @@ let rec all_permutations list =
 
 
 let group list sizes =
-  let sum_sizes = List.fold_left (+) 0 sizes in
-  let all_permuts = extract sum_sizes list in
-    all_permuts
+  
   ;;
 
 
@@ -594,37 +592,5 @@ group ["a"; "b"; "c"; "d"] [2; 1];; (* get  all permutations of size 2+1 and put
  [["a"; "b"]; ["d"]]; [["a"; "c"]; ["d"]]; [["b"; "c"]; ["d"]];
  [["a"; "d"]; ["b"]]; [["b"; "d"]; ["a"]]; [["a"; "d"]; ["c"]];
  [["b"; "d"]; ["c"]]; [["c"; "d"]; ["a"]]; [["c"; "d"]; ["b"]]] *)
-
-
-
-abc
-012
-
-
-acb
-021
-
-
-bac
-213
-
-bca
-cab
-cba
-
-
-[a] [b] [c] 
-
-[a]b
-
-[a]c
-
-[b]a
-
-[b]c
-
-[c]a
-
-[c]b
 
 
