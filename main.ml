@@ -506,6 +506,7 @@ let extract n list =
   aux [] (range (n-1) 0)
 ;;
     
+extract 1 ["a"; "b"; "c"; "d"];;
 extract 2 ["a"; "b"; "c"; "d"];;
 extract 3 ["a"; "b"; "c"; "d"];;
 extract 4 ["a"; "b"; "c"; "d"];;
@@ -518,7 +519,7 @@ extract 4 ["a"; "b"; "c"; "d"];;
 (* 27. Group the Elements of a Set Into Disjoint Subsets *)
 
 (* The following functions are very interesting but they don't solve the problem at all *)
-let combine list1 list2 =
+let mycombine list1 list2 =
   let rec aux acc l1 l2 =
     match l1 with
       | [] -> acc
@@ -530,7 +531,7 @@ let combine list1 list2 =
   List.rev (aux [] list1 list2)
 ;;
 
-combine ["a";"b"] ["c";"d";"e"];;
+mycombine ["a";"b"] ["c";"d";"e"];;
 
 let reverse_sublists listoflists =
   let rec aux acc listoflists =
@@ -566,27 +567,51 @@ let group_failed list sizes =
 ;;
 (*******end of the failed part *****)
 
-let rec rep_with_elt elt list prefix =
+(* let rec rep_with_elt elt list prefix = *)
+(*   match list with *)
+(*     | [] -> [prefix@[elt]] *)
+(*     | head::rest -> (prefix @ (elt::head::rest)) :: (rep_with_elt elt rest (prefix @ [head])) *)
+(* ;; *)
+
+(* rep_with_elt 5 [2;3] [];; *)
+
+(* let rec all_permutations list = *)
+(*   match list with *)
+(*     | [] -> [[]] *)
+(*     | head::rest -> List.concat (List.map (fun x -> (rep_with_elt head x [])) (all_permutations rest)) *)
+(* ;; *)
+
+
+let rec remainder list list2 = 
   match list with
-    | [] -> [prefix@[elt]]
-    | head::rest -> (prefix @ (elt::head::rest)) :: (rep_with_elt elt rest (prefix @ [head]))
+    | [] -> []
+    | head::rest -> if List.mem head list2 then remainder rest list2 else head::(remainder rest list2) 
 ;;
 
-rep_with_elt 5 [2;3] [];;
-
-let rec all_permutations list =
-  match list with
+let group list isizes =
+  let rec aux_group list isizes rest_combis guard = (* nb: not tail-recursive *)
+  match isizes with
     | [] -> [[]]
-    | head::rest -> List.concat (List.map (fun x -> (rep_with_elt head x [])) (all_permutations rest))
+    | headsize::restsizes -> 
+      let k_combis = if rest_combis = [] then 
+                       if guard = 0 then 
+                         extract headsize list
+                       else 
+                         []
+                     else 
+                       rest_combis in
+        match k_combis with
+          | [] -> []
+          | headcombi::restcombis -> 
+            let rem = remainder list headcombi in (* remove headcombi items from the list and get the next k-combi from that remainder *)
+           (List.map (fun x -> headcombi::x) (aux_group rem restsizes [] 0)) @ (aux_group list isizes restcombis 1)
+  in
+  aux_group list isizes [] 0
 ;;
 
 
-let group list sizes =
-  
-  ;;
-
-
-group ["a"; "b"; "c"; "d"] [2; 1];; (* get  all permutations of size 2+1 and put them in [., .], [.]
+remainder ["a";"b";"c";"d"] ["c";"d"];;
+group ["a"; "b"; "c"; "d"] [2; 1];;
 (* - : string list list list = (* my order is not the same *)
 [[["a"; "b"]; ["c"]]; [["a"; "c"]; ["b"]]; [["b"; "c"]; ["a"]];
  [["a"; "b"]; ["d"]]; [["a"; "c"]; ["d"]]; [["b"; "c"]; ["d"]];
