@@ -619,3 +619,28 @@ group ["a"; "b"; "c"; "d"] [2; 1];;
  [["b"; "d"]; ["c"]]; [["c"; "d"]; ["a"]]; [["c"; "d"]; ["b"]]] *)
 
 
+(* 28. Sorting a List of Lists According to Length of Sublists *)
+let length_sort listoflists =
+  let rec aux_insert_ordered acc list listoflists = (* acc will be insertion-sorted *)
+    match listoflists with
+      | [] -> [list]
+      | headlist::restlists -> if (List.length list) <= (List.length headlist) then
+                                 acc @ (list::headlist::restlists)
+                               else
+                                 aux_insert_ordered (headlist::acc) list restlists 
+  in
+  let insert_ordered list listoflists = aux_insert_ordered [] list listoflists 
+  in
+  let rec aux acc listoflists =
+    match listoflists with
+      | [] -> acc
+      | headlist::restlists -> aux (insert_ordered headlist acc) restlists
+  in
+  aux [] listoflists
+;;
+
+length_sort [["a"; "b"; "c"]; ["d"; "e"]; ["f"; "g"; "h"]; ["d"; "e"];
+             ["i"; "j"; "k"; "l"]; ["m"; "n"]; ["o"]];;
+(* - : string list list =
+[["o"]; ["d"; "e"]; ["d"; "e"]; ["m"; "n"]; ["a"; "b"; "c"]; ["f"; "g"; "h"];
+ ["i"; "j"; "k"; "l"]] *)
