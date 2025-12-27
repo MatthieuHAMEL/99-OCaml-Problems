@@ -622,10 +622,12 @@ group ["a"; "b"; "c"; "d"] [2; 1];;
 (* 28. Sorting a List of Lists According to Length of Sublists *)
 let length_sort listoflists =
   let rec aux_insert_ordered acc list listoflists = (* acc will be insertion-sorted *)
+    let () =  (printf " \n\nLIST\n / ") in
+    let () = List.iter (printf " %s / ") list in
     match listoflists with
-      | [] -> [list]
+      | [] -> (List.rev acc) @ [list]
       | headlist::restlists -> if (List.length list) <= (List.length headlist) then
-                                 acc @ (list::headlist::restlists)
+                                 (List.rev acc) @ (list::headlist::restlists)
                                else
                                  aux_insert_ordered (headlist::acc) list restlists 
   in
@@ -644,3 +646,36 @@ length_sort [["a"; "b"; "c"]; ["d"; "e"]; ["f"; "g"; "h"]; ["d"; "e"];
 (* - : string list list =
 [["o"]; ["d"; "e"]; ["d"; "e"]; ["m"; "n"]; ["a"; "b"; "c"]; ["f"; "g"; "h"];
  ["i"; "j"; "k"; "l"]] *)
+
+let frequency_sort iListoflists = 
+  let listoflists_length_sorted = length_sort iListoflists in
+  let lengths = List.map (fun list -> List.length list) listoflists_length_sorted in
+  let enc_lengths = encode lengths in  (* ((4, 2), (1, 3), (5, 4)) -> 4 lists of len 2, 1 list of len 3 and 5 lists of len 4 *)
+  let sorted_enc_lengths = List.sort (fun elt_a elt_b -> let (f1, _) = elt_a in let (f2, _) = elt_b in
+                 if f1 = f2 then 0
+                 else if f1 > f2 then 1
+                 else -1) enc_lengths in  (* rarest frequencies first ... *)
+  (* (f1, len1), (f2, len2), ... -> just extract the f1 lists of size len1, etc *)
+  let () = List.iter (fun x -> let (a, b) = x in printf "%d %d " a b) sorted_enc_lengths in
+  let rec aux acc sorted_freqs cnt listoflists =
+    match sorted_freqs with
+      | [] -> acc (* done *)
+      | (headfreq, headlen)::rest -> if cnt >= headfreq then aux acc rest 0 iListoflists
+                                     else match listoflists with
+                                       | [] -> raise (Failure "logic error!") (* I should find the right amount of lists *)
+                                       | headlist::restlists -> 
+                                         if (List.length headlist) = headlen then
+                                           (* I found one with the right frequency *)
+                                           aux (headlist::acc) sorted_freqs (cnt+1) iListoflists
+                                         else (* try again on the rest *)
+                                           aux acc sorted_freqs cnt restlists
+  in
+  List.rev (aux [] sorted_enc_lengths 0 iListoflists)
+;;
+
+frequency_sort [["a"; "b"; "c"]; ["d"; "e"]; ["f"; "g"; "h"]; ["d"; "e"];
+                ["i"; "j"; "k"; "l"]; ["m"; "n"]; ["o"]];;
+(*- : string list list =
+[["i"; "j"; "k"; "l"]; ["o"]; ["a"; "b"; "c"]; ["f"; "g"; "h"]; ["d"; "e"];
+ ["d"; "e"]; ["m"; "n"]]*)
+    
