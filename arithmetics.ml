@@ -65,5 +65,84 @@ phi 10;;
 (***************************************************************)
 (* 33. Determine the Prime Factors of a Given Positive Integer *)
 
+let factors number =
+  if is_prime number then [number] else
+  let rec aux acc num k =
+    if k = 0 then acc else
+    if (not (is_prime k)) then aux acc num (k-1) else
+    let r = num mod k in 
+      if r != 0 then aux acc num (k-1)
+      else (* found a prime factor! *) aux (k::acc) (num/k) k
+  in
+  aux [] number ((number/2) + 1)
+;;
 
+factors 315;;
+(*- : int list = [3; 3; 5; 7]*)
+
+(*******************************************************************)
+(* 34. Determine the Prime Factors of a Given Positive Integer (2) *)
+(* Construct a list containing the prime factors and their multiplicity. *)
+
+(* Reusing my solution to problem 10 : *)
+let encode iList = 
+  let rec aux acc list = 
+    match list with
+      | [] -> List.rev acc
+      | head::rest -> match acc with
+        | [] -> aux [(1, head)] rest
+        | (num, str)::restacc -> if str = head then
+                                   aux ((num+1, str)::restacc) rest
+                                 else
+                                   aux ((1, head)::acc) rest
+  in
+  aux [] iList
+;;
+
+
+let factors_bis number = (* here the format is (elt, freq), which is the opposite of problem 10 *)
+  List.map (fun (a, b) -> (b, a)) (encode (factors number));;
+
+factors_bis 315;;
+(*- : (int * int) list = [(3, 2); (5, 1); (7, 1)]*)
+
+(**********************************************************)
+(* 35. Calculate Euler's Totient Function Φ(m) (Improved) *)
+
+(* There is no integer power function in OCaml *)
+let pow number exponent =
+  let rec aux pow_acc exponent =
+    if exponent = 0 then pow_acc
+    else aux (pow_acc*number) (exponent-1)
+  in aux 1 exponent
+;;
+
+pow 5 0;;
+pow 3 1;;
+pow 7 2;;
+
+let phi_improved m = 
+  let factors_multi = factors_bis m in (* [(factor1, freq1); ...] *)
+  let rec aux phi_acc factors =
+    match factors with
+      | [] -> phi_acc
+      | (p1, m1)::restfactors -> aux ((p1-1) * (pow p1 (m1-1))) restfactors
+  in
+  aux 1 factors_multi
+;;
+
+phi_improved 10;;
+(*- : int = 4*)
+phi_improved 13;;
+(*- : int = 12*)
+
+(***********************************************************************)
+(* 36. Compare the Two Methods of Calculating Euler's Totient Function *)
+
+let timeit func param =
+  let t1 = Sys.time() in
+  let _ = func param in Sys.time() -. t1;;
+
+timeit phi 10090;;
+timeit phi_improved 10090;;
 
