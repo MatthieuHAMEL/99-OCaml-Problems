@@ -141,8 +141,58 @@ phi_improved 13;;
 
 let timeit func param =
   let t1 = Sys.time() in
-  let _ = func param in Sys.time() -. t1;;
+  let _ = func param in Sys.time() -. t1
+;;
 
 timeit phi 10090;;
 timeit phi_improved 10090;;
 
+(*******************************)
+(* 37. A List of Prime Numbers *)
+
+let all_primes low high = (* bounds included *)
+  let rec aux acc num =
+    if num > high then acc
+    else if is_prime num then aux (num::acc) (num+1) (* as an optimization I could iterate on odd numbers only ... *)
+    else aux acc (num+1)
+  in aux [] low
+;;
+
+List.length (all_primes 2 7920);;
+(* - : int = 1000 *)
+
+(*****************************)
+(* 38. Goldbach's Conjecture *)
+
+let goldbach num =
+  if (num mod 2) != 0 then raise (Failure "even number expected") else
+  let rec aux cnt =
+    if cnt < 2 then (* I didn't find the 2 numbers... *)
+      raise (Failure "there is an error in my program or the goldbach conjecture is wrong") (* most likely the first explanation *)
+    else if (is_prime cnt) && (is_prime (num - cnt)) then (* done *)
+      (num - cnt, cnt)
+    else 
+      aux (cnt-1)
+  in aux (num - 2) (* 0 and 1 cannot be part of the result so I start at num-2. *)
+;;
+
+goldbach 28;; (* - : int * int = (5, 23) *)
+goldbach 1578;; (* (7, 1571) *)
+goldbach 4;;    (* (2, 2) *)
+
+(***************************************)
+(* 39. A List of Goldbach Compositions *)
+
+let goldbach_list low high =
+  let rec aux acc num =
+    if num > high then acc (* done *)
+    else aux ((num, goldbach num)::acc) (num+2) (* iterate on odd numbers only *)
+  in
+  let start_low = if (low mod 2 = 0) then low else (low + 1) in (* skip low if it's odd *)
+  List.rev (aux [] start_low)
+;;
+
+goldbach_list 9 20;;
+(* - : (int * (int * int)) list =
+[(10, (3, 7)); (12, (5, 7)); (14, (3, 11)); (16, (3, 13)); (18, (5, 13));
+ (20, (3, 17))] *)
