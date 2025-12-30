@@ -100,3 +100,59 @@ gray 3;;
 
 (********************)
 (* 43. Huffman Code *)
+
+open Printf;;
+
+let huffman fs =
+  (* Utility functions *)
+  (* iMap : [("a", "010101"); ("b", "1010"); ...]. where "a", "b" are keys (i.e. single letters of the input alphabet)
+     iChar ("0" or "1") is prepended to iKey's corresponding code. *)
+  let rec locate_and_prepend iKey iChar iMap acc =
+    match iMap with
+      | [] -> raise (Failure "Key not found")
+      | (key, strval)::rest -> if key = iKey then acc @ ((key, iChar^strval)::rest)
+                               else locate_and_prepend iKey iChar rest ((key, strval)::acc)
+  in
+  let rec locate_and_prepend_all_keys iKeys iChar iMap =   (* allow to do it for several keys : *)
+    let lens = String.length iKeys in 
+    if lens = 0 then iMap
+    (* else: process the 1st character (which is a string too) and recurse on the others *)
+    else let key = String.sub iKeys 0 1 in
+       locate_and_prepend_all_keys (String.sub iKeys 1 (lens-1)) iChar (locate_and_prepend key iChar iMap [])
+  in
+
+  let rec aux_process grp1 grp2 acc_res = (* process grp1 and grp2 "in sequence" *)
+    let len_1 = String.length grp1 in
+    if len_1 > 0 then (* process grp1 and recurse to grp2 *)
+      let res_with_grp1 = if len_1 = 1 then (* new character to add to the result *)
+                            ((grp1, "0")::acc_res)
+                          else (* several characters => each of them is already in acc_res. Prepend "0" to every code *)
+                            (locate_and_prepend_all_keys grp1 "0" acc_res) in
+      aux_process "" grp2 res_with_grp1
+    else (* String.length grp1 = 0 -> process grp2; the idea is the same but I prepend "1" to result codes *)
+      if String.length grp2 = 0 then raise (Failure "Logic error (no grp2)")
+      else if String.length grp2 = 1 then ((grp2, "1")::acc_res) (* single char: just add it to the result *)
+      else locate_and_prepend_all_keys grp2 "1" acc_res (* every char of grp2 is already in acc_res. Prepend "1" to each of them *)
+  in
+
+  let rec aux acc_res fs =
+    (* sort by ascending frequency of the characters/groups *)
+    let sorted_fs = List.sort (fun (_, freq1) (_, freq2) -> if freq1 = freq2 then 0 
+                                                            else if freq1 > freq2 then 1
+                                                            else -1) fs
+    in
+    match sorted_fs with
+      | [] -> raise (Failure "Logic error!") (* should never happen *)
+      | [e] -> acc_res (* there is only one group left: DONE *)
+      | (grp1, freq1)::(grp2, freq2)::restfs -> 
+        (* aux_process locates/add every character to the result and prepends "0" or "1" to it. *)
+        aux (aux_process grp1 grp2 acc_res) ((grp1^grp2, freq1+freq2)::restfs)
+  in
+  aux [] fs
+;;
+
+let fs = [("a", 45); ("b", 13); ("c", 12); ("d", 16); ("e", 9); ("f", 5)];;
+
+huffman fs;;
+(* - : (string * string) list =
+[("a", "0"); ("c", "100"); ("b", "101"); ("f", "1100"); ("e", "1101"); ("d", "111")] *)
