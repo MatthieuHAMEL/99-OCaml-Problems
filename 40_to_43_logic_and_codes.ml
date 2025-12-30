@@ -101,7 +101,10 @@ gray 3;;
 (********************)
 (* 43. Huffman Code *)
 
-open Printf;;
+(* This may not be the absolute optimal solution but 
+  - It uses only lists (one with the chars and frequencies, with the char merging progressively), one storing the result [(char; code); ...]
+  - The result is constructed gradually. There is no big binary tree, there is no need to traverse anything to get the final codes.
+*)
 
 let huffman fs =
   (* Utility functions *)
@@ -135,7 +138,7 @@ let huffman fs =
       else locate_and_prepend_all_keys grp2 "1" acc_res (* every char of grp2 is already in acc_res. Prepend "1" to each of them *)
   in
 
-  let rec aux acc_res fs =
+  let rec aux acc_res fs = 
     (* sort by ascending frequency of the characters/groups *)
     let sorted_fs = List.sort (fun (_, freq1) (_, freq2) -> if freq1 = freq2 then 0 
                                                             else if freq1 > freq2 then 1
