@@ -72,3 +72,31 @@ table ["a"; "b"] (And (Var "a", Or (Var "a", Var "b")));;
 [([("a", true); ("b", true)], true); ([("a", true); ("b", false)], true);
  ([("a", false); ("b", true)], false); ([("a", false); ("b", false)], false)] *)
 
+(*****************)
+(* 42. Gray Code *)
+
+let gray n =
+  let rec append_0_or_1 acc strlist strdigit = (*appends 0 or 1 to every element *)
+    match strlist with
+      | [] -> List.rev acc
+      | headstr::reststrs -> append_0_or_1 ((strdigit^headstr)::acc) reststrs strdigit
+  in
+  let rec aux acc cnt =
+    if cnt >= n then acc
+    else
+      let first_half = (append_0_or_1 [] acc "0") in
+      let second_half = (append_0_or_1 [] (List.rev acc) "1") in
+      aux (first_half @ second_half) (cnt+1)
+  in
+  aux ["0";"1"] 1
+;;
+
+gray 1;;
+(* - : string list = ["0"; "1"] *)
+gray 2;;
+(* - : string list = ["00"; "01"; "11"; "10"] *)
+gray 3;;
+(* - : string list = ["000"; "001"; "011"; "010"; "110"; "111"; "101"; "100"] *)
+
+(********************)
+(* 43. Huffman Code *)
