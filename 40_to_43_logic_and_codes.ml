@@ -33,3 +33,42 @@ table2 "a" "b" (And (Var "a", Or (Var "a", Var "b")));;
 (********************************************)
 (* 41. Truth Tables for Logical Expressions *)
 
+let table iVars expr =
+  let rec value_of var varlist =
+    match varlist with
+      | [] -> raise (Failure "variable not found")
+      | (varname, varval)::restvars -> if varname = var then varval else value_of var restvars
+  in
+  let rec evaluate iExpr varlist =
+    match iExpr with
+      | Var v -> value_of v varlist
+      | Not expr -> not (evaluate expr varlist)
+      | And (expr1, expr2) -> (evaluate expr1 varlist) && (evaluate expr2 varlist)
+      | Or (expr1, expr2) ->  (evaluate expr1 varlist) || (evaluate expr2 varlist)
+  in
+
+  let rec aux_all_possibilities acc_res seed vars =  (* [[(var1, true); (var2, true); (var3, true);]; [etc ; etc] *) 
+    if vars = [] then seed
+    else match seed with (* put true and false in front of every element of the seed *)
+      | [] -> aux_all_possibilities [] acc_res (List.tl vars)  (* acc_res becomes the seed *)
+      | headseed::restseeds -> aux_all_possibilities ([(List.hd vars, true)::headseed ; (List.hd vars, false)::headseed] @ acc_res) restseeds vars
+  in
+  let all_possibilities vars =
+    let tmpvars = List.rev vars in (* to get the result in the right order *)
+    aux_all_possibilities [] [[(List.hd tmpvars, true)];[(List.hd tmpvars, false)]] (List.tl tmpvars)
+  in
+
+  let rec aux acc varlist = (* [[("var1", true), ("var2"), false  etc ]; for all possibilities ...*)
+    match varlist with
+      | [] -> acc
+      | headvarlist::restlists -> aux ((headvarlist, evaluate expr headvarlist)::acc) restlists
+  in
+  aux [] (all_possibilities iVars)
+ ;;
+
+
+table ["a"; "b"] (And (Var "a", Or (Var "a", Var "b")));;
+(* - : ((string * bool) list * bool) list =
+[([("a", true); ("b", true)], true); ([("a", true); ("b", false)], true);
+ ([("a", false); ("b", true)], false); ([("a", false); ("b", false)], false)] *)
+
