@@ -19,6 +19,7 @@ let mycombine list1 list2 =
   List.rev (aux [] list1 list2)
 ;;
 
+(* NB: the following solution is not optimal; there is no memoization. *)
 let rec cbal_tree n =
   match n with
     | 0 -> [Empty]
@@ -33,8 +34,9 @@ let rec cbal_tree n =
                let subtrees_half_plus_one = cbal_tree ((nm1/2) + 1) in
                mycombine subtrees_half subtrees_half_plus_one
              in
-             let trees = (List.map (fun (t1, u1) -> Node('x', t1, u1)) all_combis) @ (List.map (fun (t1, u1) -> Node('x', u1, t1)) all_combis) in
-             List.sort_uniq (fun x1 x2 -> if x1 = x2 then 0 else -1) trees (* eliminate duplicates *)
+             let trees = (List.map (fun (t1, u1) -> Node('x', t1, u1)) all_combis) (* and the other way if the two lists weren't the same *)
+               @ (if nm1 mod 2 = 0 then [] else (List.map (fun (t1, u1) -> Node('x', u1, t1)) all_combis)) in
+             List.sort_uniq compare trees (* eliminate duplicates *)
 ;;
 
 cbal_tree 0;;
@@ -42,4 +44,57 @@ cbal_tree 1;;
 cbal_tree 2;;
 cbal_tree 3;;
 cbal_tree 4;;
+
+
+(******************************)
+(* 45. Symmetric Binary Trees *)
+
+let is_symmetric tree =
+  let rec is_mirror tree1 tree2 =
+    match (tree1, tree2) with
+      | (Empty, Empty) -> true
+      | (Node _, Empty) | (Empty, Node _) -> false
+      | ((Node (_, left_1, right_1)), (Node (_, left_2, right_2))) -> 
+        is_mirror left_1 right_2 && is_mirror right_1 left_2
+  in
+  match tree with
+  | Empty -> true (* I suppose an empty tree is symmetric? *)
+  | Node (_, tree1, tree2) -> is_mirror tree1 tree2
+;;
+
+let symtree = 
+  Node ('A', 
+    Node ('B', 
+      Node('C', Empty, 
+        Node('D', 
+          Node('E', Empty, Empty), Node('F', Empty, Empty)))
+    , Empty),
+    
+   Node('G', Empty, 
+     Node('H', 
+       Node('I', 
+         Node('J', Empty, Empty), Node('K', Empty, Empty))
+     , Empty)))
+;;
+
+let not_symtree = 
+  Node ('A', 
+    Node ('B', 
+      Node('C', Empty, 
+        Node('D', 
+          Node('E', Empty, Empty), Node('F', Node('W', Empty, Empty), Empty)))
+    , Empty),
+    
+   Node('G', Empty, 
+     Node('H', 
+       Node('I', 
+         Node('J', Empty, Empty), Node('K', Empty, Empty))
+     , Empty)))
+;;
+
+is_symmetric symtree;;
+is_symmetric not_symtree;;
+
+(******************************************)
+(* 46. Binary Search Trees (Dictionaries) *)
 
