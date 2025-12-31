@@ -98,3 +98,39 @@ is_symmetric not_symtree;;
 (******************************************)
 (* 46. Binary Search Trees (Dictionaries) *)
 
+let construct intlist =
+  let rec insert num tree =
+    match tree with
+      | Empty -> Node(num, Empty, Empty)
+      | Node (node_num, left_tree, right_tree) ->
+        if num <= node_num then 
+          Node (node_num, insert num left_tree, right_tree) 
+        else 
+          Node (node_num, left_tree, insert num right_tree)
+  in
+  let rec aux acc intlist =
+    match intlist with
+      | [] -> acc
+      | headnum::restnums -> aux (insert headnum acc) restnums
+  in
+  aux Empty intlist
+;; 
+  
+
+construct [3; 2; 5; 7; 1];;
+(* - : int binary_tree =
+Node (3, Node (2, Node (1, Empty, Empty), Empty),
+ Node (5, Empty, Node (7, Empty, Empty))) *)
+
+is_symmetric (construct [5; 3; 18; 1; 4; 12; 21]);; (* true! *)
+not (is_symmetric (construct [3; 2; 5; 7; 4]));; (* true! *)
+
+(**********************************)
+(* 47. Generate-and-Test Paradigm *)
+
+sym_cbal_trees 5;;
+(* - : char binary_tree list =
+[Node ('x', Node ('x', Node ('x', Empty, Empty), Empty),
+  Node ('x', Empty, Node ('x', Empty, Empty)));
+ Node ('x', Node ('x', Empty, Node ('x', Empty, Empty)),
+  Node ('x', Node ('x', Empty, Empty), Empty))] *)
