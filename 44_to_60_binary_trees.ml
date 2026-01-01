@@ -215,3 +215,68 @@ let rec min_nodes h =
 min_nodes 3;; (* 4 *)
 min_nodes 4;; (* 7 *)
 min_nodes 5;; (* 12 *)
+
+(* Minimum height of a HBAL tree of size n *)
+(* The most compact binary tree is the complete tree. And the complete tree is HBAL... *)
+
+let min_height nb_nodes =
+  let rec aux h =
+    if nb_nodes <= (1 lsl h) - 1 then 
+      (* the nb_nodes nodes can be "contained" in a complete tree of size 2^h - 1, not true with h-1 *)
+      h
+    else 
+      aux (h+1)
+  in
+  aux 0
+;;
+
+min_height 0;; (* 0 *)
+min_height 1;; (* 1 *)
+min_height 2;; (* 2 *)
+min_height 6;; (* 3 : some tree that can be contained in the complete tree of height 3 but not the complete tree of height 2 *)
+min_height 7;; (* 3 : the complete tree of height 3 *)
+min_height 8;; (* 4 *)
+
+(* Maximum height of a HBAL tree of size n - not the most efficient implementation! *)
+
+(* intuitively if min_nodes h < nb_nodes < nb_nodes h+1 then the max height is h *)
+let max_height nb_nodes =
+  let rec aux h =
+    if nb_nodes < min_nodes h then
+      h-1
+    else
+      aux (h+1)
+  in aux 0
+;;
+
+max_height 0;; (* 0 *)
+max_height 1;; (* 1 *)
+max_height 2;; (* 2 *)
+max_height 3;; (* 3 *)
+max_height 4;; (* 3 *)
+
+(* Construct all the height-balanced binary trees with a given number of nodes *)
+(* Bruteforce strategy (... or "generate-and-test paradigm", it's more elegant)
+   I generate all HBAL trees with height between min_height and max_height, thanks to problem 48
+   Then I keep the ones whose sizes is n. *)
+
+let rec btree_size btree =
+  match btree with
+    | Empty -> 0
+    | Node (_, left_tree, right_tree) -> 1 + (btree_size left_tree) + (btree_size right_tree)
+;;
+
+let hbal_tree_nodes n =
+ let minh = min_height n in
+ let maxh = max_height n in
+ 
+ let rec collect_all acc cnt =
+   if cnt > maxh then acc
+   else collect_all ((hbal_tree cnt) @ acc) (cnt+1)
+ in
+ let all_trees = collect_all [] minh in
+ List.filter (fun tree -> btree_size tree = n) all_trees;; 
+;;
+
+List.length (hbal_tree_nodes 15);; (* 1553 *)
+
