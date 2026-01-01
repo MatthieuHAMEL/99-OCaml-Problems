@@ -154,3 +154,39 @@ sym_cbal_trees 5;;
 (**********************************************)
 (* 48. Construct Height-Balanced Binary Trees *)
 
+(* The solution was too smart for me *)
+
+(* I tried to find a method allowing to go from step n-1 to step n: get all max depth leafs 
+   and add every combination of left or right (or both) Node(Empty, Empty) to them.
+
+   I didn't think of combining the results of hbal_tree n-1 and n-2 from the root!
+   That combination "from the root" is basically 
+
+                         new Root
+                      /           \
+                     /             \
+    some tree in hbal n-1        some tree in hbal_n-2      (for all possible combinations)
+
+    same with hbal_n-2 on the left, hbal n-1 on the right and then (hbal n-1, hbal n-1).
+
+  That combination is written in a super smart way in "add_trees_with" (from the solution) 
+           (I understood it but it still feels like black magic to be able to WRITE that)
+  but it's just some kind of cartesian product that I could've obtained with "mycombine".
+*)
+
+let add_trees_with left right all =
+  let add_right_tree all l =
+    List.fold_left (fun a r -> Node ('x', l, r) :: a) all right in
+  List.fold_left add_right_tree all left
+;;
+let rec hbal_tree n =
+    if n = 0 then [Empty]
+    else if n = 1 then [Node ('x', Empty, Empty)]
+    else
+    (* [add_trees_with left right trees] is defined in a question above. *)
+      let t1 = hbal_tree (n - 1)
+      and t2 = hbal_tree (n - 2) in
+      add_trees_with t1 t1 (add_trees_with t1 t2 (add_trees_with t2 t1 []));;
+
+hbal_tree 2;;
+hbal_tree 3;;
