@@ -128,9 +128,29 @@ not (is_symmetric (construct [3; 2; 5; 7; 4]));; (* true! *)
 (**********************************)
 (* 47. Generate-and-Test Paradigm *)
 
+(* Generate all symmetric, completely-balanced trees of size n *)
+let sym_cbal_trees n =
+  let all_cbals = cbal_tree n in
+  
+  let rec select_sym acc trees =   (* Solution says : List.filter is_symmetric (cbal_tree n);; ... noted! ... *)
+    match trees with
+      | [] -> acc (* done *)
+      | headtree::resttrees -> if is_symmetric headtree then 
+                                 select_sym (headtree::acc) resttrees
+                               else
+                                 select_sym acc resttrees
+  in
+  select_sym [] all_cbals
+;;
+
+
 sym_cbal_trees 5;;
 (* - : char binary_tree list =
 [Node ('x', Node ('x', Node ('x', Empty, Empty), Empty),
   Node ('x', Empty, Node ('x', Empty, Empty)));
  Node ('x', Node ('x', Empty, Node ('x', Empty, Empty)),
   Node ('x', Node ('x', Empty, Empty), Empty))] *)
+
+(**********************************************)
+(* 48. Construct Height-Balanced Binary Trees *)
+
