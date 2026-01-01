@@ -152,7 +152,7 @@ sym_cbal_trees 5;;
   Node ('x', Node ('x', Empty, Empty), Empty))] *)
 
 (**********************************************)
-(* 48. Construct Height-Balanced Binary Trees *)
+(* 48. Construct Height-Balanced Binary Trees *) (*FAILED*)
 
 (* The solution was too smart for me *)
 
@@ -174,19 +174,44 @@ sym_cbal_trees 5;;
   but it's just some kind of cartesian product that I could've obtained with "mycombine".
 *)
 
-let add_trees_with left right all =
+let add_trees_with left right all = (* from OCaml.org *)
   let add_right_tree all l =
     List.fold_left (fun a r -> Node ('x', l, r) :: a) all right in
   List.fold_left add_right_tree all left
 ;;
-let rec hbal_tree n =
+let rec hbal_tree n = (* from OCaml.org *)
     if n = 0 then [Empty]
     else if n = 1 then [Node ('x', Empty, Empty)]
     else
-    (* [add_trees_with left right trees] is defined in a question above. *)
       let t1 = hbal_tree (n - 1)
       and t2 = hbal_tree (n - 2) in
       add_trees_with t1 t1 (add_trees_with t1 t2 (add_trees_with t2 t1 []));;
 
 hbal_tree 2;;
 hbal_tree 3;;
+
+(***************************************************************************)
+(* 49. Construct Height-Balanced Binary Trees With a Given Number of Nodes *)
+
+let max_nodes h = 1 lsl h - 1;;
+
+(* The minimum nodes of an HBAL tree of height 0 is 0 (the empty tree)
+   ............................................1 is 1 (Node(Empty, Empty))
+   Now consider the two HBAL trees T1, T2 with the minimum nodes, of heights n-1 and n-2 respectively.
+   The HBAL tree with the minimum nodes and a height of n is Node(T1, T2). Its size is size(T1) + size(T2) + 1
+   
+   Proof by induction : the tree to build must have one of its subtrees of height n-1 (else it won't have height n), 
+    and the other of height n-1 or n-2 to be balanced. Since size(T1) > size(T2), the other subtree 
+    has height n-2. So those subtrees should be T1 and T2...
+*)
+
+let rec min_nodes h = 
+  match h with
+    | 0 -> 0
+    | 1 -> 1
+    | x -> min_nodes (x-1) + min_nodes (x-2) + 1
+;;
+
+min_nodes 3;; (* 4 *)
+min_nodes 4;; (* 7 *)
+min_nodes 5;; (* 12 *)
