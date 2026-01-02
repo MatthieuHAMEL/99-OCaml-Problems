@@ -280,3 +280,114 @@ let hbal_tree_nodes n =
 
 List.length (hbal_tree_nodes 15);; (* 1553 *)
 
+(*****************************************)
+(* 50. Count the Leaves of a Binary Tree *)
+
+let rec count_leaves tree =
+  match tree with
+    | Empty -> 0
+    | Node(_, Empty, Empty) -> 1
+    | Node(_, left_tree, right_tree) -> (count_leaves left_tree) + (count_leaves right_tree)
+;;
+
+count_leaves Empty;; (* - : int = 0 *)
+count_leaves not_symtree;; (* 4 *)
+
+(*****************************************************)
+(* 51. Collect the Leaves of a Binary Tree in a List *)
+
+let rec leaves tree =
+  match tree with
+    | Empty -> []
+    | Node(label, Empty, Empty) -> [label]
+    | Node(_, left_tree, right_tree) -> (leaves left_tree) @ (leaves right_tree)
+;;
+
+leaves Empty;; (* - : 'a list = [] *)
+leaves not_symtree;; (* [E; W; J; K] *)
+
+(*************************************************************)
+(* 52. Collect the Internal Nodes of a Binary Tree in a List *)
+
+let rec internals tree =
+  match tree with
+    | Empty -> []
+    | Node(_, Empty, Empty) -> []
+    | Node(label, left_tree, right_tree) -> [label] @ (internals left_tree) @ (internals right_tree)
+;;
+internals (Node ('a', Empty, Empty));; (* - : char list = [] *)
+internals not_symtree;; (* ['A'; 'B'; 'C'; 'D'; 'F'; 'G'; 'H'; 'I'] *)
+
+(****************************************************)
+(* 53. Collect the Nodes at a Given Level in a List *)
+
+let rec at_level tree n =
+    match tree with
+      | Empty -> []
+      | Node(label, left, right) -> if n = 1 then (* I reached the right level *) 
+                                      [label]
+                                    else
+                                      (at_level left (n-1)) @ (at_level right (n-1))
+;;
+      
+let example_tree = 
+  Node ('a', Node ('b', Node ('d', Empty, Empty), Node ('e', Empty, Empty)),
+  Node ('c', Empty, Node ('f', Node ('g', Empty, Empty), Empty)));;
+
+at_level example_tree 2;;
+(* - : char list = ['b'; 'c'] *)
+
+(****************************************)
+(* 54. Construct a Complete Binary Tree *)
+
+(* Much more concise than the official solution and probably less efficient *)
+let complete_binary_tree list =
+  let rec aux curlabel =
+    if List.mem curlabel list then
+      Node(curlabel, aux (2*curlabel), aux (2*curlabel + 1))
+    else
+      Empty
+  in
+  aux 1
+;;
+
+let my_complete_tree = complete_binary_tree [1; 2; 3; 4; 5; 6];;
+(* - : int binary_tree =
+Node (1, Node (2, Node (4, Empty, Empty), Node (5, Empty, Empty)),
+ Node (3, Node (6, Empty, Empty), Empty)) *)
+
+let is_complete_binary_tree n t =
+  let rec aux parent_label tree is_left =
+    match tree with
+      | Empty -> true
+      | Node(label, left_tree, right_tree) ->
+          if label <= 0 || label > n then false
+          else if is_left && label != 2*parent_label then false
+          else if (not is_left) && label != 2*parent_label + 1 then false
+          else
+            (aux label left_tree true) && (aux label right_tree false)
+  in
+  let rec count_nodes tree =
+    match tree with Empty -> 0 | Node (_, left, right) -> 1 + (count_nodes left) + (count_nodes right)
+  in
+  if count_nodes t != n then false
+  else 
+    match t with Empty -> false | Node(_, left, right) -> 
+      (aux 1 left true) && (aux 1 right false)
+;;
+
+is_complete_binary_tree 6 my_complete_tree;; (* true *)
+
+let my_other_tree = Node (1, Node (2, Node (4, Empty, Empty), Node (5, Empty, Empty)),
+ Node (3, Empty, Empty));; (* removed the node 6 -> size is wrong *)
+is_complete_binary_tree 6 my_other_tree;; (* false *)
+is_complete_binary_tree 5 my_other_tree;; (* true *)
+
+let my_other_tree_2 = Node (1, Node (2, Node (4, Empty, Empty), Node (5, Empty, Empty)),
+ Node (3, Empty, Node(6, Empty, Empty)));;
+is_complete_binary_tree 6 my_other_tree_2;; (* false, node 6 should be on the left *)
+
+let my_other_tree_3 = Node (1, Node (2, Node (4, Empty, Empty), Node (5, Empty, Empty)),
+ Node (3, Node(7, Empty, Empty), Empty));;
+is_complete_binary_tree 6 my_other_tree_3;; (* false, it should be 6 instead of 7 *)
+
