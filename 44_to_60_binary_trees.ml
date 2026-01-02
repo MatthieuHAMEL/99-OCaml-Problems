@@ -391,3 +391,36 @@ let my_other_tree_3 = Node (1, Node (2, Node (4, Empty, Empty), Node (5, Empty, 
  Node (3, Node(7, Empty, Empty), Empty));;
 is_complete_binary_tree 6 my_other_tree_3;; (* false, it should be 6 instead of 7 *)
 
+(********************************)
+(* 55. Layout a Binary Tree (1) *)
+
+let example_layout_tree =
+  let leaf x = Node (x, Empty, Empty) in
+  Node ('n', Node ('k', Node ('c', leaf 'a',
+                           Node ('h', Node ('g', leaf 'e', Empty), Empty)),
+                 leaf 'm'),
+       Node ('u', Node ('p', Empty, Node ('s', leaf 'q', Empty)), Empty));;
+
+let layout_binary_tree_1 tree =  
+  let rec aux tree cnt =
+    match tree with
+      | Empty -> (Empty, cnt)
+      | Node(label, left, right) -> 
+             let (leftnode, cnt1) = aux left cnt in
+             let (rightnode, cnt2) = aux right (cnt1+1) in
+              (Node((label, cnt1+1, 0), leftnode, rightnode), cnt2)
+  in aux tree 0
+;;
+
+layout_binary_tree_1 example_layout_tree;;
+(* - : (char * int * int) binary_tree =
+Node (('n', 8, 1),
+ Node (('k', 6, 2),
+  Node (('c', 2, 3), Node (('a', 1, 4), Empty, Empty),
+   Node (('h', 5, 4),
+    Node (('g', 4, 5), Node (('e', 3, 6), Empty, Empty), Empty), Empty)),
+  Node (('m', 7, 3), Empty, Empty)),
+ Node (('u', 12, 2),
+  Node (('p', 9, 3), Empty,
+   Node (('s', 11, 4), Node (('q', 10, 5), Empty, Empty), Empty)),
+  Empty)) *)
