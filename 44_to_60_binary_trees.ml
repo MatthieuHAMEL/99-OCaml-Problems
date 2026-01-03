@@ -401,15 +401,15 @@ let example_layout_tree =
                  leaf 'm'),
        Node ('u', Node ('p', Empty, Node ('s', leaf 'q', Empty)), Empty));;
 
-let layout_binary_tree_1 tree =  
-  let rec aux tree cnt =
+let layout_binary_tree_1 tree =
+  let rec aux tree cnt h =
     match tree with
       | Empty -> (Empty, cnt)
       | Node(label, left, right) -> 
-             let (leftnode, cnt1) = aux left cnt in
-             let (rightnode, cnt2) = aux right (cnt1+1) in
-              (Node((label, cnt1+1, 0), leftnode, rightnode), cnt2)
-  in aux tree 0
+             let (leftnode, cnt1) = aux left cnt (h+1) in
+             let (rightnode, cnt2) = aux right (cnt1+1) (h+1) in
+              (Node((label, cnt1+1, h), leftnode, rightnode), cnt2)
+  in aux tree 0 1
 ;;
 
 layout_binary_tree_1 example_layout_tree;;
@@ -424,3 +424,60 @@ Node (('n', 8, 1),
   Node (('p', 9, 3), Empty,
    Node (('s', 11, 4), Node (('q', 10, 5), Empty, Empty), Empty)),
   Empty)) *)
+
+(********************************)
+(* 56. Layout a Binary Tree (2) *)
+
+let layout_binary_tree_2 tree =
+  (* First get the height of the tree *)
+  let rec height tree =
+    match tree with
+      | Empty -> 0
+      | Node(_, left, right) -> 1 + (max (height left) (height right))
+  in
+  let tree_height = height tree in
+  (* get the leftmost node height to determine the x coordinate of the root node *)
+  let rec aux_leftmost_height tree =
+    match tree with
+      | Empty -> 0
+      | Node(_, left, _) -> 1 + (aux_leftmost_height left)
+  in
+  let leftmost_height = aux_leftmost_height tree
+  in
+  (* the x distance between a child node and its root, the child node is at height h
+     the x distance between two child nodes is 2*x_step *)
+  let x_step h = 1 lsl (tree_height-h) in
+  (* now add the x_steps from the leftmost height to the root to get the x coordinate of the root *)
+  let rec aux_x_root acc cur_height =
+    if cur_height <= 1 then acc (* root reached *)
+    else aux_x_root (acc + (x_step cur_height)) (cur_height-1)
+  in
+  let x_root = aux_x_root 1 leftmost_height
+  in
+  (* now I can build up the tree with its layout *)
+  let rec aux tree cur_height x =
+    match tree with
+      | Empty -> Empty
+      | Node(label, left, right) -> 
+              Node((label, x, cur_height), aux left (cur_height+1) (x - (x_step (cur_height+1))), 
+                                            aux right (cur_height+1) (x + (x_step (cur_height+1))))
+  in aux tree 1 x_root
+;;
+
+let example_layout_tree_2 =
+  let leaf x = Node (x, Empty, Empty) in
+  Node ('n', Node ('k', Node ('c', leaf 'a',
+                           Node ('e', leaf 'd', leaf 'g')),
+                 leaf 'm'),
+       Node ('u', Node ('p', Empty, leaf 'q'), Empty));;
+
+layout_binary_tree_2 example_layout_tree_2 ;;
+(*- : (char * int * int) binary_tree =
+Node (('n', 15, 1),
+ Node (('k', 7, 2),
+  Node (('c', 3, 3), Node (('a', 1, 4), Empty, Empty),
+   Node (('e', 5, 4), Node (('d', 4, 5), Empty, Empty),
+    Node (('g', 6, 5), Empty, Empty))),
+  Node (('m', 11, 3), Empty, Empty)),
+ Node (('u', 23, 2),
+  Node (('p', 19, 3), Empty, Node (('q', 21, 4), Empty, Empty)), Empty))*)
