@@ -587,3 +587,64 @@ Node (('n', 5, 1),
   Node (('p', 6, 3), Empty,
    Node (('s', 7, 4), Node (('q', 6, 5), Empty, Empty), Empty)),
   Empty)) *)
+
+(***********************************************)
+(* 58. A String Representation of Binary Trees *)
+
+let example_layout_tree =
+  let leaf x = Node (x, Empty, Empty) in
+    (Node ('a', Node ('b', leaf 'd', leaf 'e'),
+     Node ('c', Empty, Node ('f', leaf 'g', Empty))))
+;;
+
+let rec string_of_tree tree =
+  match tree with
+    | Empty -> ""
+    | Node(label, Empty, Empty) -> (String.make 1 label)
+    | Node(label, left, right) -> (String.make 1 label) ^ "(" ^ (string_of_tree left) ^ "," ^ (string_of_tree right) ^ ")"
+;;
+
+string_of_tree example_layout_tree;; (* a(b(d,e),c(,f(g,))) *)
+
+
+let rec tree_of_string str =
+  let rec aux_parse_groups paren_cnt str first_paren_idx comma_idx cur_idx =
+     (* returns (a, z, b) where a is the index of the 1st parenthesis, b the matching closing parenthesis and z the index of the comma *)
+    if str = "" then (0, 0, 0) (* there was no parentheses pattern so it was probably a leaf *) 
+    else 
+    let ci = str.[0] in
+    let rest = String.sub str 1 ((String.length str) - 1) in
+    if ci = '(' then
+      let my_first_paren_idx = if paren_cnt = 0 then cur_idx else first_paren_idx in
+      aux_parse_groups  (paren_cnt + 1) rest my_first_paren_idx comma_idx (cur_idx+1)
+    else if ci = ',' then
+      let my_comma_idx = if paren_cnt = 1 then cur_idx else comma_idx in
+      aux_parse_groups  paren_cnt rest first_paren_idx my_comma_idx (cur_idx+1)
+    else if ci = ')' then
+      let new_paren_count = paren_cnt - 1 in
+      if new_paren_count = -1 then (0, 0, 0) (* we're not in a valid pattern *)
+      else if new_paren_count = 0 then (* done *) (first_paren_idx, comma_idx, cur_idx)
+      else aux_parse_groups new_paren_count rest first_paren_idx comma_idx (cur_idx+1)
+    else
+      aux_parse_groups paren_cnt rest first_paren_idx comma_idx (cur_idx+1)
+  in
+  let parse_groups str = aux_parse_groups 0 str 0 0 0
+  in  
+  if str = "" then Empty
+  else 
+    let (fp, c, lp) = parse_groups str in
+    let subleft = if c - fp - 1 = -1 then "" else String.sub str (fp + 1) (c - fp - 1) in
+    let subright = if lp - c - 1 = -1 then "" else String.sub str (c + 1) (lp - c - 1) in
+    Node(str.[0], tree_of_string subleft, tree_of_string subright)
+;; 
+
+tree_of_string "a(b(d,e),c(,f(g,)))";; 
+(* - : char binary_tree =
+Node ('a', Node ('b', Node ('d', Empty, Empty), Node ('e', Empty, Empty)),
+ Node ('c', Empty, Node ('f', Node ('g', Empty, Empty), Empty)))
+ *)
+
+
+(******************************************************)
+(* 59. Preorder and Inorder Sequences of Binary Trees *)
+
