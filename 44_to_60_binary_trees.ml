@@ -481,3 +481,109 @@ Node (('n', 15, 1),
   Node (('m', 11, 3), Empty, Empty)),
  Node (('u', 23, 2),
   Node (('p', 19, 3), Empty, Node (('q', 21, 4), Empty, Empty)), Empty))*)
+
+
+(********************************)
+(* 57. Layout a Binary Tree (3) *)
+
+(* There is quite a bit of code but I didn't find the problem "difficult" 
+   as the assignment says, ... compared to 48. or 44.
+   (though it may be difficult to get an optimal solution!) *)
+
+let layout_binary_tree_3 tree =
+  let rec collect_left_or_rightmosts acc cur_h tree is_left =
+    match tree with
+      | Empty -> acc
+      | Node((label, x, y), left, right) ->
+          let new_acc =
+            let opt_left_or_rightmost_h = List.assoc_opt cur_h acc in
+            match opt_left_or_rightmost_h with
+              | None -> ((cur_h, x)::acc)
+              | Some min_or_max -> if (is_left && x < min_or_max) || ((not is_left) && x > min_or_max) then
+                               ((cur_h, x)::(List.remove_assoc cur_h acc))
+                             else
+                               acc
+          in
+          collect_left_or_rightmosts (collect_left_or_rightmosts new_acc (cur_h+1) right is_left) (cur_h+1) left is_left
+  in
+  (* are the rightmost coordinates (height_i, rightX_i) colliding with (height_i, leftX_i) for each height i ? *)
+  let conflict rightmosts_x leftmosts_x =
+    let sorted_rights = List.sort (fun (h1, x1) (h2, x2) -> compare h1 h2) rightmosts_x in
+    let sorted_lefts = List.sort (fun (h1, x1) (h2, x2) -> compare h1 h2) leftmosts_x in
+    let rec aux rights lefts =
+      match (rights, lefts) with
+        | ([], []) | ([], _) | (_, []) -> false (* done, no conflict *)
+        | ((curhr, rightX)::restrights, (curhl, leftX)::restlefts) ->
+            if rightX = leftX then (* conflict *) true else aux restrights restlefts
+    in aux sorted_rights sorted_lefts
+  in
+  (* Process and build the tree starting from x, y *)
+  let rec aux cur_step x y tree =
+    match tree with
+      | Empty -> Empty
+      | Node(label, left, right) -> 
+        let left_subtree = aux 1 (x-cur_step) (y+1) left in
+        let rightmosts = collect_left_or_rightmosts [] (y+1) left_subtree false in
+        let right_subtree = aux 1 (x+cur_step) (y+1) right in
+        let leftmosts = collect_left_or_rightmosts [] (y+1) right_subtree true in
+       if conflict rightmosts leftmosts then
+         aux (cur_step+1) x y tree (* try again and put some more space between the two subtrees. *)
+       else
+         Node((label, x, y), left_subtree, right_subtree)
+  in
+  (* I build the correct tree but with the root node at x = 0 first.
+     It doesn't seem possible to get the leftmost coordinate before building the whole tree 
+     (since the right branches can "overlap" with branches from the left, as long as they don't collide) *)
+  let res_0_centered = aux 1 0 1 tree 
+  in
+  (* Last step: shift the whole tree to the right so that the lowest x is 1. *)
+  let rec min_x tree =
+    match tree with
+      | Empty -> 0
+      | Node((_, x, _), left, right) -> min (min x (min_x left)) (min_x right)
+  in
+  let rec shift_x tree step_x =
+    match tree with
+      | Empty -> Empty
+      | Node((label, x, y), left, right) -> Node((label, x+step_x, y), shift_x left step_x, shift_x right step_x)
+  in
+  shift_x res_0_centered (- (min_x res_0_centered) + 1)
+;;
+
+let example_tree_from_the_assignment_drawing =
+  let leaf x = Node (x, Empty, Empty) in
+  Node('n', Node('k', Node('c', leaf 'a',
+                                Node('e', leaf 'd', leaf 'g')), 
+                      leaf 'm'), 
+            Node('u', Node('p', Empty, leaf 'q'), Empty));;
+    
+layout_binary_tree_3 example_tree_from_the_assignment_drawing;;
+(* Node (('n', 5, 1),
+ Node (('k', 3, 2),
+  Node (('c', 2, 3), Node (('a', 1, 4), Empty, Empty),
+   Node (('e', 3, 4), Node (('d', 2, 5), Empty, Empty),
+    Node (('g', 4, 5), Empty, Empty))),
+  Node (('m', 4, 3), Empty, Empty)),
+ Node (('u', 7, 2),
+  Node (('p', 6, 3), Empty, Node (('q', 7, 4), Empty, Empty)), Empty))
+*)
+
+let example_layout_tree_3 =
+  let leaf x = Node (x, Empty, Empty) in
+  Node ('n', Node ('k', Node ('c', leaf 'a',
+                           Node ('h', Node ('g', leaf 'e', Empty), Empty)),
+                 leaf 'm'),
+       Node ('u', Node ('p', Empty, Node ('s', leaf 'q', Empty)), Empty));;
+
+layout_binary_tree_3 example_layout_tree_3;;
+(* - : (char * int * int) binary_tree =
+Node (('n', 5, 1),
+ Node (('k', 3, 2),
+  Node (('c', 2, 3), Node (('a', 1, 4), Empty, Empty),
+   Node (('h', 3, 4),
+    Node (('g', 2, 5), Node (('e', 1, 6), Empty, Empty), Empty), Empty)),
+  Node (('m', 4, 3), Empty, Empty)),
+ Node (('u', 7, 2),
+  Node (('p', 6, 3), Empty,
+   Node (('s', 7, 4), Node (('q', 6, 5), Empty, Empty), Empty)),
+  Empty)) *)
