@@ -675,35 +675,29 @@ inorder example_layout_tree;;
 
 (* Question 2: no, I can't start from a preorder sequence as shown above to build the corresponding tree (it's ambiguous!) *)
 (* Question 3: *)
-
-let pre_in_tree preorder_seq inorder_seq =
-  let rec aux preord inord parent =
-   match preord with (* also returns the "right subtree" part of preord once it has been recursively processed *)
+let rec pre_in_tree preorder_seq inorder_seq =
+   match preorder_seq with (* also returns the "right subtree/ rest of nodes" part of preorder_seq once it has been recursively processed *)
      | [] -> (Empty, [])
      | [head] -> (Node(head, Empty, Empty), [])
      | ph::succ1::preord_rest -> (* ph is the current node label. What I need to know is whether succ1 and succ2 are its children or not *)
-         match inord with
-           | ih::isuc::inord_rest -> if ih = ph then (* the head node didn't have a left child since it is first in the inorder sequence *)
-                             let opt_isuc = Some isuc in
-                             if opt_isuc = parent then (* ph represents a leaf *)
-                               (Node(ph, Empty, Empty), (succ1::preord_rest))
-                             else if isuc = succ1 then (* maybe this case is covered by the next one. TODO *)
-                               (Node(ph, Empty, Node(succ1, Empty, Empty)), preord_rest)
-                             else (* The inorder sequence has something else than succ1 after ph -> recursion *)
-                               let (right_branch, _) = aux (succ1::preord_rest) (isuc::inord_rest) (Some ph) in
-                               (Node(ph, Empty, right_branch), [])
-                           else (* There is something before ph in the inorder seq.
-                                   I must be able to find ph somewhere in the inorder list to build the right child... *)
-                              let (left, right_preorder) = aux (succ1::preord_rest) inord (Some ph) in
-                              let inorder_after_ph = List.drop_while (fun x -> x != ph) inord in
-                              let (right, _) = match preord_rest with
-                                | _::_ -> aux right_preorder (List.tl inorder_after_ph) (Some ph)
-                                | [] -> (Empty, []) in
-                              (Node(ph, left, right), [])
+         match inorder_seq with
+           | [] -> raise (Failure "inorder seq cannot be empty") (* by construction of our recursion *)
            | [e] -> if e = ph then (Node(ph, Empty, Empty),[]) else raise (Failure "inorder cannot contain a single element different from ph")
-           | [] -> raise (Failure "inorder seq cannot be empty")
-  in
-  aux preorder_seq inorder_seq None
+           | ih::isuc::inord_rest -> 
+                           if ih = ph then (* the head node didn't have a left child since it is first in the inorder sequence *)
+                             if (not (List.mem isuc preorder_seq)) then (* ph is a leaf since we already saw the next inorder node in the past preorder_seq *)
+                               (Node(ph, Empty, Empty), (succ1::preord_rest))
+                             else (* The inorder sequence has something else than succ1 after ph -> recursion *)
+                               let (right_branch, restnodes) = pre_in_tree (succ1::preord_rest) (isuc::inord_rest) in
+                               (Node(ph, Empty, right_branch), restnodes)
+                           else (* There is something before ph in the inorder seq. (the left branch!)
+                                   I must be able to find ph somewhere in the inorder list to build the right child... *)
+                              let (left, right_preorder) = pre_in_tree (succ1::preord_rest) inorder_seq in
+                              let inorder_after_ph = List.drop_while (fun x -> x != ph) inorder_seq in
+                              let (right, restafterright) = match preord_rest with
+                                | _::_ -> pre_in_tree right_preorder (List.tl inorder_after_ph)
+                                | [] -> (Empty, []) in
+                              (Node(ph, left, right), restafterright)       
 ;;                           
 
 let newtree = pre_in_tree ['a'; 'b'; 'd'; 'e'; 'c'; 'f'; 'g'] ['d'; 'b'; 'e'; 'a'; 'c'; 'g'; 'f'];;
