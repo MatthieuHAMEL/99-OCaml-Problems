@@ -702,3 +702,13 @@ let rec pre_in_tree preorder_seq inorder_seq =
 
 let newtree = pre_in_tree ['a'; 'b'; 'd'; 'e'; 'c'; 'f'; 'g'] ['d'; 'b'; 'e'; 'a'; 'c'; 'g'; 'f'];;
 
+(************************************************)
+(* 60. Dotstring Representation of Binary Trees *)
+
+let rec tree_dotstring tree =
+  match tree with
+    | Empty -> "."
+    | Node(label, left, right) -> (String.make 1 label) ^ (tree_dotstring left) ^ (tree_dotstring right)
+;;
+
+tree_dotstring example_layout_tree;;
